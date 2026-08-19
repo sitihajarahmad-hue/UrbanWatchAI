@@ -2,85 +2,93 @@ import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// DICTIONARY DWI-BAHASA (BM / EN)
+// DICTIONARY DWI-BAHASA (BM / EN) - JPBW SABAH E-ZONING
 const translations = {
   BM: {
-    title: "UrbanWatch",
+    title: "E-Zoning Sabah",
     logout: "Log Keluar",
-    profile: "Profil Saya",
+    profile: "Profil Pengguna",
     changePass: "Tukar Kata Laluan",
-    mapTab: "Peta & Analisis Satelit",
-    adminTab: "Panel Admin",
-    selectRegion: "Pilih Daerah Analysis:",
-    urbanSim: "Simulasi Pembandaran",
-    riskScore: "Skor Indeks Risiko",
-    ssoHeader: "Portal Log Masuk SSO System",
-    ssoSub: "Sila pilih pembekal identiti SSO anda untuk meneruskan akses ke dalam sistem",
-    loginAsSuperAdmin: "Log Masuk sebagai Super Admin",
-    loginAsAdmin: "Log Masuk sebagai Admin Biasa",
-    loginAsUser: "Log Masuk sebagai Pengguna Biasa",
+    mapTab: "Peta Spatial & Analisis",
+    adminTab: "Panel Admin (IOC)",
+    selectRegion: "Pilih Daerah (Sabah):",
+    urbanSim: "Simulasi Pembangunan Guna Tanah",
+    riskScore: "Skor Indeks Konflik Zon",
+    ssoHeader: "Portal Log Masuk SSO E-Zoning",
+    ssoSub: "Sila pilih akses identiti SSO agensi/pengguna untuk meneruskan",
+    loginAsSuperAdmin: "Log Masuk sebagai Super Admin (JPBW)",
+    loginAsAdmin: "Log Masuk sebagai System Admin",
+    loginAsUser: "Log Masuk sebagai Public User (Orang Awam)",
     satEsri: "Satelit Esri High-Resolution",
     satGoogle: "Satelit Google Standard",
-    satOsm: "OpenStreetMap Terrain & Hybrid",
-    adminTitle: "Dashboard Pentadbiran & Pengurusan Spatial",
-    uploadTitle: "1. Import Fail Spatial Baharu",
-    dragDrop: "Klik atau seret fail GIS (.geojson / .shp) di sini",
-    userMgmtTitle: "2. Pengurusan Pengguna SSO & Peranan",
-    dataListTitle: "3. Senarai Data Spatial Dalam Pangkalan Data",
-    dataId: "ID Data",
+    satOsm: "OpenStreetMap Terrain",
+    adminTitle: "Dashboard Pengurusan Data Spatial E-Zoning",
+    uploadTitle: "Import Fail GIS (.geojson / .shp)",
+    dragDrop: "Klik atau seret fail Shapefile / GeoJSON di sini (EPSG:4326 / EPSG:29873)",
+    userMgmtTitle: "Pengurusan Pengguna & Peranan",
+    dataListTitle: "Senarai Layer GIS Rasmi JPBW Sabah",
+    dataId: "ID Layer",
     region: "Daerah",
-    filename: "Nama Fail",
+    filename: "Nama Fail / Layer",
     uploader: "Dimuat Naik Oleh",
-    status: "Status",
+    status: "Status Kelulusan",
     actions: "Tindakan",
-    edit: "Edit",
+    edit: "Edit Attributes",
     delete: "Padam",
-    restricted: "Terhad kepada Super Admin Sahaja",
+    restricted: "Akses Terhad kepada Super Admin JPBW",
     close: "Tutup",
     save: "Simpan",
     cancel: "Batal",
     currentPass: "Kata Laluan Sedia Ada",
     newPass: "Kata Laluan Baharu",
-    confirmPass: "Sahkan Kata Laluan Baharu",
+    confirmPass: "Sahkan Kata Laluan",
+    profileTitle: "Maklumat Profil Akaun E-Zoning",
+    personalInfo: "Maklumat Peribadi & Jabatan",
+    sysPermissions: "Tahap Kebenaran Akses Layer GIS",
+    recentActivity: "Aktiviti Carian & Transaksi",
   },
   EN: {
-    title: "UrbanWatch",
+    title: "E-Zoning Sabah",
     logout: "Sign Out",
-    profile: "My Profile",
+    profile: "User Profile",
     changePass: "Change Password",
-    mapTab: "Map & Satellite Analytics",
-    adminTab: "Admin Panel",
-    selectRegion: "Select Analysis Region:",
-    urbanSim: "Urban Simulation",
-    riskScore: "Risk Index Score",
-    ssoHeader: "SSO System Login Portal",
-    ssoSub: "Please select your SSO identity provider to proceed into the system",
-    loginAsSuperAdmin: "Log in as Super Admin",
-    loginAsAdmin: "Log in as Standard Admin",
-    loginAsUser: "Log in as Standard User",
+    mapTab: "Spatial Map & Analytics",
+    adminTab: "Admin Panel (IOC)",
+    selectRegion: "Select District (Sabah):",
+    urbanSim: "Land Use Development Simulation",
+    riskScore: "Zoning Conflict Index Score",
+    ssoHeader: "E-Zoning SSO Login Portal",
+    ssoSub: "Please select your agency/user SSO identity provider",
+    loginAsSuperAdmin: "Log in as Super Admin (JPBW)",
+    loginAsAdmin: "Log in as System Admin",
+    loginAsUser: "Log in as Public User",
     satEsri: "Esri High-Resolution Satellite",
     satGoogle: "Google Standard Satellite",
-    satOsm: "OpenStreetMap Terrain & Hybrid",
-    adminTitle: "Administration & Spatial Data Dashboard",
-    uploadTitle: "1. Import New Spatial File",
-    dragDrop: "Click or drag GIS files (.geojson / .shp) here",
-    userMgmtTitle: "2. SSO User & Role Management",
-    dataListTitle: "3. Spatial Datasets in Database",
-    dataId: "Data ID",
-    region: "Region",
-    filename: "Filename",
+    satOsm: "OpenStreetMap Terrain",
+    adminTitle: "E-Zoning Spatial Data Management Dashboard",
+    uploadTitle: "Import GIS File (.geojson / .shp)",
+    dragDrop: "Click or drag Shapefile / GeoJSON files here (EPSG:4326 / EPSG:29873)",
+    userMgmtTitle: "User Management & Roles",
+    dataListTitle: "JPBW Sabah Official GIS Layer List",
+    dataId: "Layer ID",
+    region: "District",
+    filename: "File / Layer Name",
     uploader: "Uploaded By",
-    status: "Status",
+    status: "Approval Status",
     actions: "Actions",
-    edit: "Edit",
+    edit: "Edit Attributes",
     delete: "Delete",
-    restricted: "Restricted to Super Admin Only",
+    restricted: "Restricted to JPBW Super Admin",
     close: "Close",
     save: "Save",
     cancel: "Cancel",
     currentPass: "Current Password",
     newPass: "New Password",
-    confirmPass: "Confirm New Password",
+    confirmPass: "Confirm Password",
+    profileTitle: "E-Zoning Account Profile Information",
+    personalInfo: "Personal & Department Info",
+    sysPermissions: "GIS Layer Access Permissions",
+    recentActivity: "Search Activity & Transactions",
   }
 };
 
@@ -95,43 +103,52 @@ export default function App() {
   // PAGE VIEW STATE: 'map' | 'profile' | 'admin'
   const [currentPage, setCurrentPage] = useState('map');
 
-  // UI MODALS STATE
+  // UI MODALS
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-
-  // FORM TUKAR PASSWORD
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirmPass: '' });
   const [passwordStatus, setPasswordStatus] = useState('');
 
-  // MAP & SIMULATION STATE
-  const [selectedRegionKey, setSelectedRegionKey] = useState('lahad_datu');
+  // MAP STATE - SABAH DISTRICTS
+  const [selectedRegionKey, setSelectedRegionKey] = useState('kota_kinabalu');
   const [urbanExpansionRate, setUrbanExpansionRate] = useState(0); 
 
-  // MOCK SPATIAL DATA
-  const [spatialDataList, setSpatialDataList] = useState([
-    { id: 'DAT-001', region: 'Lahad Datu (Sabah)', filename: 'lahad_datu_boundary_2026.geojson', size: '4.2 MB', uploadedBy: 'admin.sabah@sabah.gov.my', date: '2026-03-12', status: 'Verified' },
-    { id: 'DAT-002', region: 'Selayang (Selangor)', filename: 'selayang_zone_planner_v2.shp', size: '12.8 MB', uploadedBy: 'zaki@plan.gov.my', date: '2026-02-18', status: 'Verified' },
-    { id: 'DAT-003', region: 'Kuantan (Pahang)', filename: 'kuantan_coastal_risk_2026.json', size: '3.1 MB', uploadedBy: 'siti@utm.my', date: '2026-01-05', status: 'Pending Review' }
+  // ORIGINAL GIS DATA LAYERS (RUJUKAN DOKUMEN URS JPBW SABAH)
+  const [spatialDataList] = useState([
+    { id: 'LYR-ZONINGPD', region: 'Kota Kinabalu', filename: 'ZONINGPD.geojson (Landuse District Plan)', uploadedBy: 'admin.jpbw@sabah.gov.my', status: 'Approved' },
+    { id: 'LYR-KADASTER', region: 'Penampang', filename: 'KADASTER.shp (Cadastral Lots & Parcel UPI)', uploadedBy: 'admin.jpbw@sabah.gov.my', status: 'Approved' },
+    { id: 'LYR-ZONINGPT', region: 'Putatan', filename: 'ZONINGPT.geojson (Local Plan Landuse)', uploadedBy: 'system.admin@sabah.gov.my', status: 'Approved' },
+    { id: 'LYR-BKLAIR1', region: 'Tuaran', filename: 'BKLAIR1.shp (Water Pipeline Infrastructure)', uploadedBy: 'water.dept@sabah.gov.my', status: 'Pending Approval' },
+    { id: 'LYR-ELEKTRIK1', region: 'Kota Kinabalu', filename: 'ELEKTRIK1.shp (High Voltage Grid)', uploadedBy: 'sesb.admin@sabah.gov.my', status: 'Approved' }
   ]);
 
-  // MOCK USERS LIST
+  // USERS LIST ACCORDING TO URS SPECIFICATION (SUPER ADMIN, SYSTEM ADMIN, PUBLIC USER)
   const [usersList] = useState([
-    { id: 1, name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN", provider: "MyGovUC SSO" },
-    { id: 2, name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN", provider: "Microsoft Azure AD" },
-    { id: 3, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", provider: "Google SSO" }
+    { id: 1, name: "Pegawai JPBW Sabah", email: "superadmin.jpbw@sabah.gov.my", role: "SUPER_ADMIN", provider: "Sabah Pay / Govt SSO" },
+    { id: 2, name: "Perancang Bandar", email: "sysadmin.planner@sabah.gov.my", role: "SYSTEM_ADMIN", provider: "Microsoft Azure AD" },
+    { id: 3, name: "Pengguna Awam / Pemaju", email: "public.user@gmail.com", role: "PUBLIC_USER", provider: "MyGovUC SSO" }
   ]);
 
+  // SABAH TARGET DISTRICTS (FROM URS REPORT)
   const database = {
-    selayang: { name: "Selayang", coords: [3.2379, 101.6640], zoom: 13, baseRisk: 75 },
-    kuantan: { name: "Kuantan", coords: [3.8077, 103.3260], zoom: 13, baseRisk: 68 },
-    lahad_datu: { name: "Lahad Datu", coords: [5.0268, 118.3270], zoom: 12, baseRisk: 82 }
+    kota_kinabalu: { name: "Kota Kinabalu", coords: [5.9804, 116.0735], zoom: 12, baseRisk: 70 },
+    penampang: { name: "Penampang", coords: [5.9122, 116.1030], zoom: 13, baseRisk: 65 },
+    putatan: { name: "Putatan", coords: [5.8920, 116.0500], zoom: 13, baseRisk: 60 },
+    tuaran: { name: "Tuaran", coords: [6.1778, 116.2308], zoom: 12, baseRisk: 55 }
   };
 
   const current = database[selectedRegionKey];
   const calculatedRiskScore = Math.min(100, Math.round(current.baseRisk + (urbanExpansionRate * 1.2)));
 
   const handleSSOLogin = (provider, mockData) => {
-    setCurrentUser({ ...mockData, provider });
+    setCurrentUser({
+      ...mockData,
+      provider,
+      department: mockData.role === 'SUPER_ADMIN' ? 'Jabatan Perancang Bandar & Wilayah (JPBW)' : mockData.role === 'SYSTEM_ADMIN' ? 'Bahagian Pemetaan Spatial' : 'Orang Awam / Penyelidik',
+      phone: "+60 88-123 456",
+      joinedDate: "15 Jan 2025",
+      tokens: mockData.role === 'PUBLIC_USER' ? 100 : 'Unlimited'
+    });
     setIsAuthenticated(true);
     setCurrentPage('map');
   };
@@ -157,66 +174,57 @@ export default function App() {
     }, 1000);
   };
 
-  const handleDeleteSpatial = (id) => {
-    if (window.confirm(lang === 'BM' ? 'Adakah anda pasti ingin memadam data ini?' : 'Are you sure you want to delete this data?')) {
-      setSpatialDataList(spatialDataList.filter(item => item.id !== id));
-    }
-  };
-
-  // 1. LANDING PAGE SSO LOG IN (JIKA BELUM AUTH)
+  // 1. LANDING PAGE SSO LOG IN (CLEAN WHITE THEME WITH EMERALD/BLUE BORDERS)
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-        <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="bg-slate-800 p-0.5 rounded-lg border border-slate-700 flex items-center">
-              <button onClick={() => setLang('BM')} className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition ${lang === 'BM' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>BM</button>
-              <button onClick={() => setLang('EN')} className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition ${lang === 'EN' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>EN</button>
+            <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex items-center">
+              <button onClick={() => setLang('BM')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'BM' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>BM</button>
+              <button onClick={() => setLang('EN')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'EN' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>EN</button>
             </div>
-            <h1 className="text-xl font-extrabold text-white tracking-tight">{t.title} <span className="text-emerald-400">AI</span></h1>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">{t.title} <span className="text-emerald-600">JPBW</span></h1>
           </div>
         </header>
 
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-amber-500 to-purple-500"></div>
+          <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-emerald-500"></div>
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-black text-white tracking-tight">{t.ssoHeader}</h2>
-              <p className="text-xs text-slate-400">{t.ssoSub}</p>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight">{t.ssoHeader}</h2>
+              <p className="text-sm text-slate-500">{t.ssoSub}</p>
             </div>
 
             <div className="space-y-4">
-              <button onClick={() => handleSSOLogin('MyGovUC SSO', { name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN" })} className="w-full bg-slate-800 hover:bg-purple-950/40 border border-slate-700 p-4 rounded-2xl flex items-center justify-between text-left transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-lg">🏛️</div>
+              <button onClick={() => handleSSOLogin('Sabah Govt SSO', { name: "Pegawai JPBW Sabah", email: "superadmin.jpbw@sabah.gov.my", role: "SUPER_ADMIN" })} className="w-full bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-400 p-4 rounded-2xl flex items-center justify-between text-left transition shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">🏛️</div>
                   <div>
-                    <p className="text-xs font-bold text-white">{t.loginAsSuperAdmin}</p>
-                    <p className="text-[10px] text-slate-400">zaki@plan.gov.my • MyGovUC</p>
+                    <p className="text-sm font-bold text-slate-800">{t.loginAsSuperAdmin}</p>
+                    <p className="text-[11px] text-slate-500">superadmin.jpbw@sabah.gov.my</p>
                   </div>
                 </div>
-                <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded font-mono font-bold">SUPER ADMIN</span>
               </button>
 
-              <button onClick={() => handleSSOLogin('Microsoft Azure AD', { name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN" })} className="w-full bg-slate-800 hover:bg-amber-950/40 border border-slate-700 p-4 rounded-2xl flex items-center justify-between text-left transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">🏢</div>
+              <button onClick={() => handleSSOLogin('Microsoft Azure AD', { name: "Perancang Bandar", email: "sysadmin.planner@sabah.gov.my", role: "SYSTEM_ADMIN" })} className="w-full bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-400 p-4 rounded-2xl flex items-center justify-between text-left transition shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">🏢</div>
                   <div>
-                    <p className="text-xs font-bold text-white">{t.loginAsAdmin}</p>
-                    <p className="text-[10px] text-slate-400">admin.sabah@sabah.gov.my • Azure AD</p>
+                    <p className="text-sm font-bold text-slate-800">{t.loginAsAdmin}</p>
+                    <p className="text-[11px] text-slate-500">sysadmin.planner@sabah.gov.my</p>
                   </div>
                 </div>
-                <span className="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-mono font-bold">ADMIN</span>
               </button>
 
-              <button onClick={() => handleSSOLogin('Google SSO', { name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER" })} className="w-full bg-slate-800 hover:bg-emerald-950/40 border border-slate-700 p-4 rounded-2xl flex items-center justify-between text-left transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">🌐</div>
+              <button onClick={() => handleSSOLogin('MyGovUC / Google', { name: "Pengguna Awam", email: "public.user@gmail.com", role: "PUBLIC_USER" })} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-400 p-4 rounded-2xl flex items-center justify-between text-left transition shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-lg">🌐</div>
                   <div>
-                    <p className="text-xs font-bold text-white">{t.loginAsUser}</p>
-                    <p className="text-[10px] text-slate-400">siti@utm.my • Google SSO</p>
+                    <p className="text-sm font-bold text-slate-800">{t.loginAsUser}</p>
+                    <p className="text-[11px] text-slate-500">public.user@gmail.com</p>
                   </div>
                 </div>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono font-bold">USER</span>
               </button>
             </div>
           </div>
@@ -225,221 +233,281 @@ export default function App() {
     );
   }
 
-  // 2. DASHBOARD UTAMA SELEPAS LOG MASUK
+  // 2. DASHBOARD UTAMA (CLEAN WHITE THEME + ACCENT BORDERS)
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative">
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans relative">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-20 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="bg-slate-800 p-0.5 rounded-lg border border-slate-700 flex items-center">
-            <button onClick={() => setLang('BM')} className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition ${lang === 'BM' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>BM</button>
-            <button onClick={() => setLang('EN')} className={`px-2.5 py-1 text-[11px] font-extrabold rounded-md transition ${lang === 'EN' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>EN</button>
+          <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex items-center">
+            <button onClick={() => setLang('BM')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'BM' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>BM</button>
+            <button onClick={() => setLang('EN')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'EN' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>EN</button>
           </div>
-          <h1 onClick={() => setCurrentPage('map')} className="text-xl font-extrabold text-white tracking-tight cursor-pointer">
-            {t.title} <span className="text-emerald-400">AI</span>
+          <h1 onClick={() => setCurrentPage('map')} className="text-xl font-extrabold text-slate-900 tracking-tight cursor-pointer">
+            {t.title} <span className="text-emerald-600">JPBW</span>
           </h1>
-          <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold border ${
-            currentUser?.role === 'SUPER_ADMIN' 
-              ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
-              : currentUser?.role === 'ADMIN' 
-              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
-              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+          <span className={`text-[10px] px-3 py-1 rounded-full font-bold border ${
+            currentUser?.role === 'SUPER_ADMIN' ? 'bg-blue-50 text-blue-700 border-blue-300' : currentUser?.role === 'SYSTEM_ADMIN' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-emerald-50 text-emerald-700 border-emerald-300'
           }`}>
             {currentUser?.role}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
-            <button 
-              onClick={() => setCurrentPage('map')} 
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${currentPage === 'map' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300'}`}
-            >
-              {t.mapTab}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button onClick={() => setCurrentPage('map')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition ${currentPage === 'map' ? 'bg-white text-emerald-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+              🗺️ {t.mapTab}
             </button>
-
-            {/* HANYA ADMIN & SUPER ADMIN BOLEH TEKAN BUTTON ADMIN PANEL */}
-            {(currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
-              <button 
-                onClick={() => setCurrentPage('admin')} 
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${currentPage === 'admin' ? 'bg-amber-500 text-slate-950 font-bold' : 'text-amber-400'}`}
-              >
-                {t.adminTab}
+            {(currentUser?.role === 'SYSTEM_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+              <button onClick={() => setCurrentPage('admin')} className={`px-4 py-1.5 text-xs font-bold rounded-md transition ${currentPage === 'admin' ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+                ⚙️ {t.adminTab}
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* VIEW 1: MAP + PANEL ANALISIS */}
+      {/* VIEW 1: MAP + PANEL ANALISIS (ORIGINAL SABAH DATA) */}
       {currentPage === 'map' && (
         <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="space-y-6 lg:col-span-1">
-            <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
-              <label className="text-xs text-slate-400 block font-semibold">{t.selectRegion}</label>
+            <div className="bg-white border-t-4 border-t-emerald-500 border-x border-b border-slate-200 p-5 rounded-xl space-y-4 shadow-sm">
+              <label className="text-xs text-slate-500 block font-bold uppercase tracking-wide">{t.selectRegion}</label>
               <select 
                 value={selectedRegionKey}
                 onChange={(e) => setSelectedRegionKey(e.target.value)}
-                className="w-full bg-slate-800 text-sm font-semibold text-emerald-400 px-3 py-2 rounded-lg border border-slate-700 focus:outline-none"
+                className="w-full bg-slate-50 text-sm font-bold text-slate-800 px-3 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               >
-                <option value="lahad_datu">Lahad Datu (Sabah)</option>
-                <option value="selayang">Selayang (Selangor)</option>
-                <option value="kuantan">Kuantan (Pahang)</option>
+                <option value="kota_kinabalu">Kota Kinabalu (Raster / Zoning)</option>
+                <option value="penampang">Penampang (Kadaster / Lot)</option>
+                <option value="putatan">Putatan (Zoning PT)</option>
+                <option value="tuaran">Tuaran (Infrastruktur / Utility)</option>
               </select>
 
-              <div className="space-y-3 pt-2 border-t border-slate-800">
+              <div className="space-y-3 pt-4 border-t border-slate-100">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xs font-bold uppercase text-emerald-400">{t.urbanSim}</h2>
-                  <span className="text-xs font-mono font-bold text-amber-400">+{urbanExpansionRate}%</span>
+                  <h2 className="text-xs font-bold uppercase text-slate-700">{t.urbanSim}</h2>
+                  <span className="text-xs font-mono font-bold text-blue-600">+{urbanExpansionRate}%</span>
                 </div>
                 <input 
                   type="range" min="0" max="25" value={urbanExpansionRate}
                   onChange={(e) => setUrbanExpansionRate(e.target.value)}
-                  className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                 />
                 <div className="flex justify-between text-xs pt-1">
-                  <span className="text-slate-400">{t.riskScore}:</span>
-                  <span className="font-bold text-red-400">{calculatedRiskScore} / 100</span>
+                  <span className="font-semibold text-slate-500">{t.riskScore}:</span>
+                  <span className={`font-bold ${calculatedRiskScore > 75 ? 'text-red-600' : 'text-amber-600'}`}>{calculatedRiskScore} / 100</span>
                 </div>
               </div>
             </div>
+
+            {/* INFORMASI TIER LAYER ACCORDING TO URS */}
+            <div className="bg-white border-l-4 border-l-blue-500 border-y border-r border-slate-200 p-4 rounded-xl shadow-sm text-xs space-y-2">
+              <h3 className="font-bold text-slate-800 uppercase tracking-wide">Peringkat Akses Layer (Sabah E-Zoning)</h3>
+              <p className="text-slate-600">● <strong>1st Level (FOC):</strong> Akses asas 9 atribut (Daerah, Kod Geran)[span_20](start_span)[span_20](end_span).</p>
+              <p className="text-slate-600">● <strong>2nd Level (Subscription):</strong> Akses 8 atribut tambahan pelan daerah[span_21](start_span)[span_21](end_span).</p>
+              <p className="text-slate-600">● <strong>3rd Level (Token Access):</strong> Carian Lot Kadaster (10 Token / Parcel)[span_22](start_span)[span_22](end_span).</p>
+            </div>
           </div>
 
-          {/* PETA SATELLITE (ESRI + GOOGLE + OSM FIXED FEED) */}
-          <div className="lg:col-span-3 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden relative min-h-[500px]">
+          <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[500px] z-0">
             <MapContainer key={selectedRegionKey} center={current.coords} zoom={current.zoom} className="w-full h-full min-h-[500px]">
               <LayersControl position="topright">
-                
-                {/* ESRI HIGH RESOLUTION SATELLITE (STABLE & DIRECT) */}
                 <LayersControl.BaseLayer checked name={t.satEsri}>
-                  <TileLayer
-                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    attribution="&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
-                  />
+                  <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
                 </LayersControl.BaseLayer>
-
-                {/* GOOGLE SATELLITE STANDARD */}
                 <LayersControl.BaseLayer name={t.satGoogle}>
                   <TileLayer url="https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}" />
                 </LayersControl.BaseLayer>
-
-                {/* HYBRID OVERLAY */}
                 <LayersControl.BaseLayer name={t.satOsm}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 </LayersControl.BaseLayer>
-
               </LayersControl>
-
               <TileLayer url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}" />
-              <Circle center={current.coords} radius={1000 + (urbanExpansionRate * 80)} pathOptions={{ color: 'red', fillColor: 'red', fillOpacity: 0.35 }} />
-              <Marker position={current.coords}><Popup>{current.name} Spatial Marker</Popup></Marker>
+              <Circle center={current.coords} radius={1000 + (urbanExpansionRate * 80)} pathOptions={{ color: '#059669', fillColor: '#10b981', fillOpacity: 0.3 }} />
+              <Marker position={current.coords}><Popup>{current.name} - GIS Spatial Layer Active</Popup></Marker>
             </MapContainer>
           </div>
         </main>
       )}
 
-      {/* VIEW 2: HALAMAN PROFIL PENGGUNA */}
+      {/* VIEW 2: HALAMAN PROFIL PENGGUNA (DESIGN BERSIH, PUTIH, BORDER HIJAU & BIRU) */}
       {currentPage === 'profile' && (
-        <main className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400 font-bold text-2xl">
+        <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6">
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">👤 {t.profileTitle}</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* KAD PROFIL KIRI */}
+            <div className="md:col-span-1 bg-white border-t-4 border-t-blue-500 border-x border-b border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col items-center text-center space-y-4">
+              <div className="w-24 h-24 rounded-full bg-blue-50 border-2 border-blue-400 shadow-md flex items-center justify-center text-blue-600 font-black text-4xl">
                 {currentUser?.name.charAt(0)}
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-white">{currentUser?.name}</h2>
-                <p className="text-xs text-slate-400">{currentUser?.email}</p>
-                <p className="text-xs text-emerald-400 mt-1 font-mono">SSO Provider: {currentUser?.provider}</p>
+                <h3 className="text-lg font-bold text-slate-900">{currentUser?.name}</h3>
+                <p className="text-sm text-slate-500 mb-2">{currentUser?.email}</p>
+                <span className="bg-slate-100 border border-slate-200 text-xs px-3 py-1 rounded-full text-slate-700 font-bold">
+                  Role: {currentUser?.role}
+                </span>
+              </div>
+              <div className="w-full border-t border-slate-100 pt-4 mt-2">
+                <button onClick={() => setShowPasswordModal(true)} className="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs py-2 rounded-lg transition shadow-sm">
+                  🔑 {t.changePass}
+                </button>
               </div>
             </div>
-            <span className="bg-slate-800 border border-slate-700 text-xs px-4 py-2 rounded-xl text-amber-400 font-bold">
-              {currentUser?.role}
-            </span>
-          </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-white border-b border-slate-800 pb-2">Maklumat Kebenaran Sistem</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                <p className="text-slate-400">Akses Muat Naik GIS:</p>
-                <p className="font-bold text-slate-200 mt-1">{currentUser?.role !== 'USER' ? '✅ Dibenarkan' : '❌ Terhad'}</p>
+            {/* KAD MAKLUMAT KANAN */}
+            <div className="md:col-span-2 space-y-6">
+              
+              {/* MAKLUMAT PERIBADI */}
+              <div className="bg-white border-l-4 border-l-emerald-500 border-y border-r border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.personalInfo}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold uppercase block mb-1">Nama Penuh</label>
+                    <p className="font-semibold text-slate-800">{currentUser?.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold uppercase block mb-1">Penyedia SSO</label>
+                    <p className="font-semibold text-slate-800">{currentUser?.provider}</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold uppercase block mb-1">Jabatan / Agensi</label>
+                    <p className="font-semibold text-slate-800">{currentUser?.department}</p>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-bold uppercase block mb-1">Baki Token Carian</label>
+                    <p className="font-bold text-emerald-600">{currentUser?.tokens}</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-                <p className="text-slate-400">Akses Pengurusan Pengguna:</p>
-                <p className="font-bold text-slate-200 mt-1">{currentUser?.role === 'SUPER_ADMIN' ? '✅ Super Admin Access' : '❌ Tiada Kebenaran'}</p>
+
+              {/* KEBENARAN SISTEM E-ZONING */}
+              <div className="bg-white border-l-4 border-l-blue-500 border-y border-r border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.sysPermissions}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">✅</div>
+                    <div>
+                      <p className="font-bold text-slate-800">Akses Peta Interactive IOC</p>
+                      <p className="text-[11px] text-slate-500">Melihat layer ZONINGPD, ZONINGPT & KADASTER[span_23](start_span)[span_23](end_span).</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${currentUser?.role !== 'PUBLIC_USER' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                      {currentUser?.role !== 'PUBLIC_USER' ? '✅' : '❌'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">Muat Naik Layer Spatial JPBW</p>
+                      <p className="text-[11px] text-slate-500">Menambah data Shapefile (.shp) & GeoJSON[span_24](start_span)[span_24](end_span).</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${currentUser?.role === 'SUPER_ADMIN' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                      {currentUser?.role === 'SUPER_ADMIN' ? '👑' : '❌'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">Kelulusan Data & Pengurusan Pengguna</p>
+                      <p className="text-[11px] text-slate-500">Kelulusan akhir layer spatial sebelum diterbitkan[span_25](start_span)[span_25](end_span).</p>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* AKTIVITI TERKINI */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.recentActivity}</h3>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🗺️</span>
+                      <span className="text-slate-700 font-medium">Log masuk SSO E-Zoning Sabah</span>
+                    </div>
+                    <span className="text-xs text-slate-400">Hari ini, 08:30 AM</span>
+                  </li>
+                  <li className="flex items-center justify-between border-b border-slate-50 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📍</span>
+                      <span className="text-slate-700 font-medium">Carian Lot Kadaster di Kota Kinabalu</span>
+                    </div>
+                    <span className="text-xs text-slate-400">Semalam, 14:15 PM</span>
+                  </li>
+                </ul>
+              </div>
+
             </div>
           </div>
         </main>
       )}
 
-      {/* VIEW 3: HALAMAN ADMIN & SUPER ADMIN */}
-      {currentPage === 'admin' && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+      {/* VIEW 3: HALAMAN ADMIN (CLEAN WHITE THEME) */}
+      {currentPage === 'admin' && (currentUser?.role === 'SYSTEM_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
         <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
-          <div className="border-b border-slate-800 pb-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">
+          <div className="border-b border-slate-200 pb-4">
+            <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
               ⚙️ {t.adminTitle}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4 shadow-lg">
-              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider">{t.uploadTitle}</h3>
-              <div className="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-8 text-center bg-slate-950/40 cursor-pointer transition">
+            <div className="bg-white border-t-4 border-t-emerald-500 border-x border-b border-slate-200 p-6 rounded-2xl space-y-4 shadow-sm">
+              <h3 className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{t.uploadTitle}</h3>
+              <div className="border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 rounded-xl p-8 text-center bg-slate-50 cursor-pointer transition">
                 <div className="text-3xl mb-2">📁</div>
-                <p className="text-xs text-slate-300 font-semibold">{t.dragDrop}</p>
+                <p className="text-xs text-slate-500 font-semibold">{t.dragDrop}</p>
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl space-y-4 border shadow-lg ${currentUser?.role === 'SUPER_ADMIN' ? 'bg-slate-900 border-purple-500/40' : 'bg-slate-900/40 border-slate-800 opacity-60'}`}>
-              <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider">{t.userMgmtTitle}</h3>
+            <div className={`p-6 rounded-2xl space-y-4 border shadow-sm ${currentUser?.role === 'SUPER_ADMIN' ? 'bg-white border-t-4 border-t-blue-500 border-x border-b border-slate-200' : 'bg-slate-50 border-slate-200 opacity-70'}`}>
+              <h3 className={`text-xs font-bold uppercase tracking-wider ${currentUser?.role === 'SUPER_ADMIN' ? 'text-blue-600' : 'text-slate-400'}`}>{t.userMgmtTitle}</h3>
               {currentUser?.role === 'SUPER_ADMIN' ? (
                 <div className="space-y-2 text-xs">
                   {usersList.map(u => (
-                    <div key={u.id} className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700/50">
+                    <div key={u.id} className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-200">
                       <div>
-                        <p className="font-bold text-slate-200">{u.name}</p>
-                        <p className="text-[10px] text-slate-400">{u.email}</p>
+                        <p className="font-bold text-slate-800">{u.name}</p>
+                        <p className="text-[10px] text-slate-500">{u.email}</p>
                       </div>
-                      <span className="text-[10px] bg-slate-900 px-2.5 py-1 rounded-lg text-emerald-400 font-mono font-bold border border-slate-700">{u.role}</span>
+                      <span className="text-[10px] bg-white px-2 py-1 rounded-md text-blue-700 font-bold border border-slate-200 shadow-sm">{u.role}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 italic py-8 text-center">{t.restricted}</p>
+                <p className="text-xs text-slate-400 italic py-8 text-center">{t.restricted}</p>
               )}
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-lg">
-            <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">{t.dataListTitle}</h3>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{t.dataListTitle}</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
-                    <th className="py-3 px-3">{t.dataId}</th>
-                    <th className="py-3 px-3">{t.region}</th>
-                    <th className="py-3 px-3">{t.filename}</th>
-                    <th className="py-3 px-3">{t.uploader}</th>
-                    <th className="py-3 px-3">{t.status}</th>
-                    <th className="py-3 px-3 text-right">{t.actions}</th>
+                  <tr className="border-b border-slate-200 text-slate-500 uppercase font-bold bg-slate-50">
+                    <th className="py-3 px-4 rounded-tl-lg">{t.dataId}</th>
+                    <th className="py-3 px-4">{t.region}</th>
+                    <th className="py-3 px-4">{t.filename}</th>
+                    <th className="py-3 px-4">{t.uploader}</th>
+                    <th className="py-3 px-4">{t.status}</th>
+                    <th className="py-3 px-4 text-right rounded-tr-lg">{t.actions}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {spatialDataList.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-850/50 transition">
-                      <td className="py-3 px-3 font-mono text-emerald-400 font-bold">{item.id}</td>
-                      <td className="py-3 px-3 font-semibold text-slate-200">{item.region}</td>
-                      <td className="py-3 px-3 text-slate-300 font-mono text-[11px]">{item.filename}</td>
-                      <td className="py-3 px-3 text-slate-400">{item.uploadedBy}</td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="py-3 px-4 font-mono text-slate-600 font-bold">{item.id}</td>
+                      <td className="py-3 px-4 font-bold text-slate-800">{item.region}</td>
+                      <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">{item.filename}</td>
+                      <td className="py-3 px-4 text-slate-500">{item.uploadedBy}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold border ${item.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                           {item.status}
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right space-x-2">
-                        <button className="bg-slate-800 text-amber-400 font-semibold px-2.5 py-1 rounded-lg border border-slate-700">{t.edit}</button>
+                      <td className="py-3 px-4 text-right space-x-2">
+                        <button className="bg-white text-blue-600 hover:bg-blue-50 font-bold px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">{t.edit}</button>
                         {currentUser?.role === 'SUPER_ADMIN' && (
-                          <button onClick={() => handleDeleteSpatial(item.id)} className="bg-red-500/10 text-red-400 font-semibold px-2.5 py-1 rounded-lg border border-red-500/30">{t.delete}</button>
+                          <button className="bg-white text-red-600 hover:bg-red-50 font-bold px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">{t.delete}</button>
                         )}
                       </td>
                     </tr>
@@ -451,76 +519,59 @@ export default function App() {
         </main>
       )}
 
-      {/* MENU AKAUN TERAPUNG (BOTTOM RIGHT) */}
+      {/* MENU AKAUN TERAPUNG */}
       <div className="fixed bottom-6 right-6 z-50">
         {showUserMenu && (
-          <div className="mb-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 w-56 shadow-2xl space-y-1">
-            <div className="px-3 py-2 border-b border-slate-800">
-              <p className="text-xs font-bold text-white truncate">{currentUser?.name}</p>
-              <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
+          <div className="mb-3 bg-white border border-slate-200 rounded-2xl p-2 w-56 shadow-xl space-y-1">
+            <div className="px-3 py-3 border-b border-slate-100 bg-slate-50 rounded-t-xl mb-1">
+              <p className="text-sm font-bold text-slate-800 truncate">{currentUser?.name}</p>
+              <p className="text-[10px] text-slate-500 truncate">{currentUser?.email}</p>
             </div>
-            <button 
-              onClick={() => { setCurrentPage('profile'); setShowUserMenu(false); }} 
-              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
-            >
+            <button onClick={() => { setCurrentPage('profile'); setShowUserMenu(false); }} className="w-full text-left px-3 py-2 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
               👤 {t.profile}
             </button>
-            <button 
-              onClick={() => { setShowPasswordModal(true); setShowUserMenu(false); }} 
-              className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition"
-            >
+            <button onClick={() => { setShowPasswordModal(true); setShowUserMenu(false); }} className="w-full text-left px-3 py-2 text-xs font-bold text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
               🔑 {t.changePass}
             </button>
-            <button 
-              onClick={handleLogout} 
-              className="w-full text-left px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl transition"
-            >
+            <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg transition">
               🚪 {t.logout}
             </button>
           </div>
         )}
 
-        <button 
-          onClick={() => setShowUserMenu(!showUserMenu)} 
-          className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700 shadow-2xl flex items-center gap-3 pr-4 transition"
-        >
-          <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center font-bold text-emerald-400 text-xs">
+        <button onClick={() => setShowUserMenu(!showUserMenu)} className="bg-white hover:bg-slate-50 text-slate-800 p-2 rounded-full border border-slate-200 shadow-lg flex items-center gap-3 pr-4 transition">
+          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 border border-blue-300 flex items-center justify-center font-black text-sm">
             {currentUser?.name ? currentUser.name.charAt(0) : 'U'}
           </div>
-          <span className="text-xs font-bold hidden sm:inline">{currentUser?.name}</span>
+          <span className="text-sm font-bold hidden sm:inline">{currentUser?.name}</span>
         </button>
       </div>
 
       {/* MODAL TUKAR KATA LALUAN */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white">🔑 {t.changePass}</h3>
-              <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-800">🔑 {t.changePass}</h3>
+              <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-slate-700 font-bold text-lg">✕</button>
             </div>
-
-            <form onSubmit={handleChangePassword} className="space-y-3">
+            <form onSubmit={handleChangePassword} className="space-y-4">
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">{t.currentPass}</label>
-                <input type="password" required value={passwordForm.current} onChange={(e) => setPasswordForm({...passwordForm, current: e.target.value})} className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white" />
+                <label className="text-[11px] font-bold text-slate-500 block mb-1 uppercase">{t.currentPass}</label>
+                <input type="password" required value={passwordForm.current} onChange={(e) => setPasswordForm({...passwordForm, current: e.target.value})} className="w-full bg-slate-50 border border-slate-200 text-sm px-3 py-2.5 rounded-lg text-slate-800 focus:outline-none focus:border-blue-500" />
               </div>
-
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">{t.newPass}</label>
-                <input type="password" required value={passwordForm.newPass} onChange={(e) => setPasswordForm({...passwordForm, newPass: e.target.value})} className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white" />
+                <label className="text-[11px] font-bold text-slate-500 block mb-1 uppercase">{t.newPass}</label>
+                <input type="password" required value={passwordForm.newPass} onChange={(e) => setPasswordForm({...passwordForm, newPass: e.target.value})} className="w-full bg-slate-50 border border-slate-200 text-sm px-3 py-2.5 rounded-lg text-slate-800 focus:outline-none focus:border-blue-500" />
               </div>
-
               <div>
-                <label className="text-[11px] font-semibold text-slate-400 block mb-1">{t.confirmPass}</label>
-                <input type="password" required value={passwordForm.confirmPass} onChange={(e) => setPasswordForm({...passwordForm, confirmPass: e.target.value})} className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white" />
+                <label className="text-[11px] font-bold text-slate-500 block mb-1 uppercase">{t.confirmPass}</label>
+                <input type="password" required value={passwordForm.confirmPass} onChange={(e) => setPasswordForm({...passwordForm, confirmPass: e.target.value})} className="w-full bg-slate-50 border border-slate-200 text-sm px-3 py-2.5 rounded-lg text-slate-800 focus:outline-none focus:border-blue-500" />
               </div>
-
-              {passwordStatus && <p className="text-[11px] font-semibold text-emerald-400">{passwordStatus}</p>}
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowPasswordModal(false)} className="px-3 py-1.5 text-xs text-slate-400">{t.cancel}</button>
-                <button type="submit" className="bg-emerald-500 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg">{t.save}</button>
+              {passwordStatus && <p className="text-xs font-bold text-emerald-600 bg-emerald-50 p-2 rounded-lg text-center border border-emerald-100">{passwordStatus}</p>}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onClick={() => setShowPasswordModal(false)} className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-lg">{t.cancel}</button>
+                <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2 rounded-lg shadow-sm">{t.save}</button>
               </div>
             </form>
           </div>
