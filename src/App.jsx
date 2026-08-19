@@ -6,7 +6,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'profile' | 'admin'
   
   // SSO & AUTH STATE
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Default True untuk terus nampak butang menu
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [currentUser, setCurrentUser] = useState({
     name: "Ahmad Zaki",
     email: "zaki@plan.gov.my",
@@ -15,29 +15,39 @@ export default function App() {
   });
   
   const [showSSOModal, setShowSSOModal] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false); // Toggle Menu Pop-up Bawah Kanan
-  const [showPasswordModal, setShowPasswordModal] = useState(false); // Modal Tukar Password
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
-  // Form State Tukar Password
+  // FORM TUKAR PASSWORD STATE
   const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirmPass: '' });
   const [passwordStatus, setPasswordStatus] = useState('');
 
-  // Map / Simulation State
+  // MAP & SIMULATION STATE
   const [selectedRegionKey, setSelectedRegionKey] = useState('lahad_datu');
   const [urbanExpansionRate, setUrbanExpansionRate] = useState(0); 
 
-  // Admin State
+  // ADMIN STATE: SPATIAL DATA LIST (CRUD)
+  const [spatialDataList, setSpatialDataList] = useState([
+    { id: 'DAT-001', region: 'Lahad Datu (Sabah)', filename: 'lahad_datu_boundary_2026.geojson', size: '4.2 MB', uploadedBy: 'admin.sabah@sabah.gov.my', date: '2026-03-12', status: 'Verified' },
+    { id: 'DAT-002', region: 'Selayang (Selangor)', filename: 'selayang_zone_planner_v2.shp', size: '12.8 MB', uploadedBy: 'zaki@plan.gov.my', date: '2026-02-18', status: 'Verified' },
+    { id: 'DAT-003', region: 'Kuantan (Pahang)', filename: 'kuantan_coastal_risk_2026.json', size: '3.1 MB', uploadedBy: 'siti@utm.my', date: '2026-01-05', status: 'Pending Review' }
+  ]);
+
+  // EDIT MODAL STATE
+  const [editingData, setEditingData] = useState(null);
+
+  // UPLOAD FILE STATE
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
 
-  // Mock User List for Super Admin Management
+  // MOCK USER LIST FOR SUPER ADMIN MANAGEMENT
   const [usersList, setUsersList] = useState([
     { id: 1, name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN", status: "Active", provider: "MyGovUC SSO" },
     { id: 2, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", status: "Active", provider: "Google SSO" },
     { id: 3, name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN", status: "Active", provider: "Microsoft SSO" }
   ]);
 
-  // Database mock
+  // DATABASE MOCK
   const database = {
     selayang: { name: "Selayang", state: "Selangor", coords: [3.2379, 101.6640], zoom: 13, baseRisk: 75 },
     kuantan: { name: "Kuantan", state: "Pahang", coords: [3.8077, 103.3260], zoom: 13, baseRisk: 68 },
@@ -47,7 +57,7 @@ export default function App() {
   const current = database[selectedRegionKey];
   const calculatedRiskScore = Math.min(100, Math.round(current.baseRisk + (urbanExpansionRate * 1.2)));
 
-  // SIMULASI SSO LOG IN
+  // HANDLERS
   const handleSSOLogin = (provider, mockUserData) => {
     const existingUser = usersList.find(u => u.email === mockUserData.email);
     const roleAssigned = existingUser ? existingUser.role : mockUserData.defaultRole;
@@ -83,15 +93,40 @@ export default function App() {
     }, 1200);
   };
 
+  // UPLOAD FILE AND AUTO ADD TO LIST
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setUploadedFile(file);
       setUploadStatus('Memproses dan mengesahkan struktur data spatial...');
       setTimeout(() => {
-        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport.`);
+        const newData = {
+          id: `DAT-00${spatialDataList.length + 1}`,
+          region: selectedRegionKey === 'lahad_datu' ? 'Lahad Datu (Sabah)' : selectedRegionKey === 'selayang' ? 'Selayang (Selangor)' : 'Kuantan (Pahang)',
+          filename: file.name,
+          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+          uploadedBy: currentUser.email,
+          date: new Date().toISOString().split('T')[0],
+          status: 'Verified'
+        };
+        setSpatialDataList([newData, ...spatialDataList]);
+        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport dan ditambahkan ke dalam senarai.`);
       }, 1500);
     }
+  };
+
+  // DELETE SPATIAL DATA
+  const handleDeleteSpatialData = (id) => {
+    if (window.confirm("Adakah anda pasti ingin memadam data spatial ini daripada pangkalan data?")) {
+      setSpatialDataList(spatialDataList.filter(item => item.id !== id));
+    }
+  };
+
+  // UPDATE SPATIAL DATA
+  const handleSaveSpatialEdit = (e) => {
+    e.preventDefault();
+    setSpatialDataList(spatialDataList.map(item => item.id === editingData.id ? editingData : item));
+    setEditingData(null);
   };
 
   return (
@@ -156,7 +191,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Views */}
+      {/* Main Map View */}
       {activeTab === 'analytics' && (
         <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="space-y-6 lg:col-span-1">
@@ -222,7 +257,7 @@ export default function App() {
         </main>
       )}
 
-      {/* Admin View */}
+      {/* Admin & Super Admin View */}
       {activeTab === 'admin' && isAuthenticated && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
         <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
           <div className="border-b border-slate-800 pb-4">
@@ -232,21 +267,22 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Muat Naik Fail Spatial */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4">
-              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">1. Import Fail Spatial (.JSON / .SHP)</h3>
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">1. Import Fail Spatial Baharu</h3>
               <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center bg-slate-950/40">
                 <input type="file" accept=".json,.geojson,.zip" onChange={handleFileUpload} className="hidden" id="admin-file-input" />
                 <label htmlFor="admin-file-input" className="cursor-pointer block space-y-2">
                   <div className="text-2xl">📁</div>
-                  <p className="text-xs text-slate-300">Muat Naik Data Terkini Daerah</p>
+                  <p className="text-xs text-slate-300">Klik untuk muat naik fail GIS (.geojson / .shp)</p>
                 </label>
               </div>
               {uploadedFile && <p className="text-xs text-emerald-400 font-semibold">{uploadStatus}</p>}
             </div>
 
-            {/* Super Admin Control */}
+            {/* Kawalan Role Pengguna (Super Admin Only) */}
             <div className={`p-6 rounded-xl space-y-4 border ${currentUser?.role === 'SUPER_ADMIN' ? 'bg-slate-900 border-purple-500/40' : 'bg-slate-900/40 border-slate-800 opacity-50'}`}>
-              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">2. Pengurusan Kebenaran Pengguna (SSO)</h3>
+              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">2. Kebenaran Pengguna SSO</h3>
               {currentUser?.role === 'SUPER_ADMIN' ? (
                 <div className="space-y-2 text-xs">
                   {usersList.map(u => (
@@ -275,16 +311,83 @@ export default function App() {
               )}
             </div>
           </div>
+
+          {/* ========================================================================= */}
+          {/* JADUAL SENARAI DATA SPATIAL (SUPER ADMIN & ADMIN - KEMASKINI & PADAM) */}
+          {/* ========================================================================= */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                  3. Senarai Data Spatial Terkandung Dalam Pangkalan Data
+                </h3>
+                <p className="text-xs text-slate-400">Super Admin boleh mengemaskini butiran fail atau memadam data daripada pangkalan data.</p>
+              </div>
+              <span className="text-xs font-mono bg-slate-800 px-2.5 py-1 rounded border border-slate-700 text-slate-300">
+                Jumlah Data: {spatialDataList.length}
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 uppercase font-semibold">
+                    <th className="py-3 px-3">ID Data</th>
+                    <th className="py-3 px-3">Daerah / Wilayah</th>
+                    <th className="py-3 px-3">Nama Fail</th>
+                    <th className="py-3 px-3">Dimuat Naik Oleh</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Tindakan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {spatialDataList.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-850/50 transition">
+                      <td className="py-3 px-3 font-mono text-emerald-400 font-bold">{item.id}</td>
+                      <td className="py-3 px-3 font-semibold text-slate-200">{item.region}</td>
+                      <td className="py-3 px-3 text-slate-300 font-mono text-[11px]">{item.filename} <span className="text-slate-500">({item.size})</span></td>
+                      <td className="py-3 px-3 text-slate-400">{item.uploadedBy}</td>
+                      <td className="py-3 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          item.status === 'Verified' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right space-x-2">
+                        {/* Kemaskini Button */}
+                        <button 
+                          onClick={() => setEditingData(item)}
+                          className="bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-2.5 py-1 rounded border border-slate-700 transition"
+                        >
+                          ✏️ Edit
+                        </button>
+                        
+                        {/* Padam Button (Hanya Super Admin Boleh Padam) */}
+                        {currentUser?.role === 'SUPER_ADMIN' ? (
+                          <button 
+                            onClick={() => handleDeleteSpatialData(item.id)}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold px-2.5 py-1 rounded border border-red-500/30 transition"
+                          >
+                            🗑️ Padam
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-600 italic">Padam Terhad</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </main>
       )}
 
-      {/* ========================================================================= */}
-      {/* FLOATING USER MENU BUTTON AT BOTTOM RIGHT (3 OPTIONS) */}
-      {/* ========================================================================= */}
+      {/* FLOATING USER MENU BUTTON AT BOTTOM RIGHT */}
       {isAuthenticated && (
         <div className="fixed bottom-6 right-6 z-50">
-          
-          {/* Timbul Pop-up Menu (3 Pilihan) */}
           {showUserMenu && (
             <div className="mb-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 w-56 shadow-2xl space-y-1 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2">
               <div className="px-3 py-2 border-b border-slate-800">
@@ -292,29 +395,20 @@ export default function App() {
                 <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
               </div>
 
-              {/* Pilihan 1: User Profile */}
               <button 
-                onClick={() => {
-                  setActiveTab('profile');
-                  setShowUserMenu(false);
-                }}
+                onClick={() => { setActiveTab('profile'); setShowUserMenu(false); }}
                 className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl flex items-center gap-2.5 transition"
               >
                 <span>👤</span> Lihat Profil Saya
               </button>
 
-              {/* Pilihan 2: Tukar Password */}
               <button 
-                onClick={() => {
-                  setShowPasswordModal(true);
-                  setShowUserMenu(false);
-                }}
+                onClick={() => { setShowPasswordModal(true); setShowUserMenu(false); }}
                 className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl flex items-center gap-2.5 transition"
               >
                 <span>🔑</span> Tukar Kata Laluan
               </button>
 
-              {/* Pilihan 3: Sign Out */}
               <button 
                 onClick={handleLogout}
                 className="w-full text-left px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl flex items-center gap-2.5 transition"
@@ -324,7 +418,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Main Trigger Button */}
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700 shadow-2xl flex items-center gap-3 pr-4 transition group active:scale-95"
@@ -340,20 +433,67 @@ export default function App() {
               {showUserMenu ? '✕' : '▲'}
             </span>
           </button>
-
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* MODAL TUKAR KATA LALUAN (CHANGE PASSWORD MODAL) */}
-      {/* ========================================================================= */}
+      {/* MODAL EDIT DATA SPATIAL */}
+      {editingData && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white">✏️ Kemaskini Data Spatial ({editingData.id})</h3>
+              <button onClick={() => setEditingData(null)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveSpatialEdit} className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Nama Fail Spatial</label>
+                <input 
+                  type="text" required
+                  value={editingData.filename}
+                  onChange={(e) => setEditingData({...editingData, filename: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white focus:outline-none focus:border-emerald-500 font-mono" 
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Daerah / Region</label>
+                <input 
+                  type="text" required
+                  value={editingData.region}
+                  onChange={(e) => setEditingData({...editingData, region: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white focus:outline-none focus:border-emerald-500" 
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Status Data</label>
+                <select 
+                  value={editingData.status}
+                  onChange={(e) => setEditingData({...editingData, status: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-emerald-400 font-bold focus:outline-none"
+                >
+                  <option value="Verified">Verified</option>
+                  <option value="Pending Review">Pending Review</option>
+                  <option value="Archived">Archived</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+                <button type="button" onClick={() => setEditingData(null)} className="px-3 py-1.5 text-slate-400 hover:text-white">Batal</button>
+                <button type="submit" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg transition">Simpan Perubahan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TUKAR KATA LALUAN */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                🔑 Tukar Kata Laluan
-              </h3>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">🔑 Tukar Kata Laluan</h3>
               <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
             </div>
 
@@ -395,19 +535,8 @@ export default function App() {
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setShowPasswordModal(false)}
-                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
-                >
-                  Batal
-                </button>
-                <button 
-                  type="submit" 
-                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg transition"
-                >
-                  Simpan
-                </button>
+                <button type="button" onClick={() => setShowPasswordModal(false)} className="px-3 py-1.5 text-xs text-slate-400 hover:text-white">Batal</button>
+                <button type="submit" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg transition">Simpan</button>
               </div>
             </form>
           </div>
