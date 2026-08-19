@@ -5,14 +5,9 @@ import 'leaflet/dist/leaflet.css';
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'profile' | 'admin'
   
-  // SSO & AUTH STATE
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [currentUser, setCurrentUser] = useState({
-    name: "Ahmad Zaki",
-    email: "zaki@plan.gov.my",
-    role: "SUPER_ADMIN",
-    provider: "MyGovUC SSO"
-  });
+  // SSO & AUTH STATE - Bermula sebagai Guest (false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   
   const [showSSOModal, setShowSSOModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -43,8 +38,8 @@ export default function App() {
   // MOCK USER LIST FOR SUPER ADMIN MANAGEMENT
   const [usersList, setUsersList] = useState([
     { id: 1, name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN", status: "Active", provider: "MyGovUC SSO" },
-    { id: 2, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", status: "Active", provider: "Google SSO" },
-    { id: 3, name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN", status: "Active", provider: "Microsoft SSO" }
+    { id: 2, name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN", status: "Active", provider: "Microsoft Azure AD" },
+    { id: 3, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", status: "Active", provider: "Google SSO" }
   ]);
 
   // DATABASE MOCK
@@ -57,15 +52,12 @@ export default function App() {
   const current = database[selectedRegionKey];
   const calculatedRiskScore = Math.min(100, Math.round(current.baseRisk + (urbanExpansionRate * 1.2)));
 
-  // HANDLERS
+  // HANDLERS FOR SSO
   const handleSSOLogin = (provider, mockUserData) => {
-    const existingUser = usersList.find(u => u.email === mockUserData.email);
-    const roleAssigned = existingUser ? existingUser.role : mockUserData.defaultRole;
-
     setCurrentUser({
       name: mockUserData.name,
       email: mockUserData.email,
-      role: roleAssigned,
+      role: mockUserData.role,
       provider: provider
     });
     setIsAuthenticated(true);
@@ -105,12 +97,12 @@ export default function App() {
           region: selectedRegionKey === 'lahad_datu' ? 'Lahad Datu (Sabah)' : selectedRegionKey === 'selayang' ? 'Selayang (Selangor)' : 'Kuantan (Pahang)',
           filename: file.name,
           size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-          uploadedBy: currentUser.email,
+          uploadedBy: currentUser?.email || 'Admin',
           date: new Date().toISOString().split('T')[0],
           status: 'Verified'
         };
         setSpatialDataList([newData, ...spatialDataList]);
-        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport dan ditambahkan ke dalam senarai.`);
+        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport.`);
       }, 1500);
     }
   };
@@ -150,8 +142,8 @@ export default function App() {
               {currentUser?.role === 'SUPER_ADMIN' ? '👑 SUPER ADMIN' : currentUser?.role === 'ADMIN' ? '⚡ ADMIN' : '👤 USER'}
             </span>
           ) : (
-            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">
-              MOD TETAMU (GUEST)
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded-full border border-slate-700 font-mono">
+              🌐 TETAMU (GUEST)
             </span>
           )}
         </div>
@@ -183,9 +175,9 @@ export default function App() {
           {!isAuthenticated && (
             <button 
               onClick={() => setShowSSOModal(true)}
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-lg shadow-emerald-500/10 transition"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-lg shadow-lg shadow-emerald-500/10 transition flex items-center gap-2"
             >
-              Log Masuk SSO
+              <span>🔑</span> Log Masuk SSO
             </button>
           )}
         </div>
@@ -312,9 +304,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* ========================================================================= */}
           {/* JADUAL SENARAI DATA SPATIAL (SUPER ADMIN & ADMIN - KEMASKINI & PADAM) */}
-          {/* ========================================================================= */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
             <div className="flex justify-between items-center">
               <div>
@@ -389,7 +379,7 @@ export default function App() {
       {isAuthenticated && (
         <div className="fixed bottom-6 right-6 z-50">
           {showUserMenu && (
-            <div className="mb-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 w-56 shadow-2xl space-y-1 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2">
+            <div className="mb-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 w-56 shadow-2xl space-y-1 backdrop-blur-md">
               <div className="px-3 py-2 border-b border-slate-800">
                 <p className="text-xs font-bold text-white truncate">{currentUser?.name}</p>
                 <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
@@ -420,18 +410,15 @@ export default function App() {
 
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700 shadow-2xl flex items-center gap-3 pr-4 transition group active:scale-95"
+            className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700 shadow-2xl flex items-center gap-3 pr-4 transition active:scale-95"
           >
             <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center font-bold text-emerald-400 text-sm">
               {currentUser?.name ? currentUser.name.charAt(0) : 'U'}
             </div>
             <div className="text-left hidden sm:block">
-              <p className="text-xs font-bold leading-tight group-hover:text-emerald-400 transition">{currentUser?.name}</p>
+              <p className="text-xs font-bold leading-tight">{currentUser?.name}</p>
               <p className="text-[10px] text-slate-400 leading-tight">Tetapan Akaun</p>
             </div>
-            <span className="text-xs text-slate-400 group-hover:text-white transition">
-              {showUserMenu ? '✕' : '▲'}
-            </span>
           </button>
         </div>
       )}
@@ -543,45 +530,62 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL SSO LOGIN */}
+      {/* MODAL PILIHAN AKAN SSO LOG MASUK */}
       {showSSOModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
             <div className="flex justify-between items-center border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-white">Log Masuk SSO UrbanWatch</h3>
-                <p className="text-xs text-slate-400">Pilih Akaun Organisasi / Kerajaan Anda</p>
+                <p className="text-xs text-slate-400">Pilih Akaun Untuk Simulasi Log Masuk</p>
               </div>
               <button onClick={() => setShowSSOModal(false)} className="text-slate-400 hover:text-white font-bold">✕</button>
             </div>
 
             <div className="space-y-3">
+              {/* Option 1: Super Admin */}
               <button 
-                onClick={() => handleSSOLogin('MyGovUC SSO', { name: "Ahmad Zaki", email: "zaki@plan.gov.my", defaultRole: "SUPER_ADMIN" })}
-                className="w-full bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 p-3 rounded-xl flex items-center justify-between text-left transition"
+                onClick={() => handleSSOLogin('MyGovUC SSO', { name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN" })}
+                className="w-full bg-purple-950/30 hover:bg-purple-900/50 border border-purple-500/40 p-3 rounded-xl flex items-center justify-between text-left transition group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">🏛️</div>
+                  <div className="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm">🏛️</div>
                   <div>
-                    <p className="text-xs font-bold text-purple-300">Log Masuk MyGovUC SSO</p>
-                    <p className="text-[10px] text-slate-400">zaki@plan.gov.my</p>
+                    <p className="text-xs font-bold text-purple-300 group-hover:text-purple-200">Log Masuk Sebagai Super Admin</p>
+                    <p className="text-[10px] text-slate-400">zaki@plan.gov.my (MyGovUC SSO)</p>
                   </div>
                 </div>
                 <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded font-mono font-bold">SUPER ADMIN</span>
               </button>
 
+              {/* Option 2: Admin */}
               <button 
-                onClick={() => handleSSOLogin('Microsoft Entra ID', { name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", defaultRole: "ADMIN" })}
-                className="w-full bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 p-3 rounded-xl flex items-center justify-between text-left transition"
+                onClick={() => handleSSOLogin('Microsoft Azure AD', { name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN" })}
+                className="w-full bg-amber-950/30 hover:bg-amber-900/50 border border-amber-500/40 p-3 rounded-xl flex items-center justify-between text-left transition group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">🏢</div>
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm">🏢</div>
                   <div>
-                    <p className="text-xs font-bold text-amber-300">Log Masuk Microsoft Azure AD</p>
-                    <p className="text-[10px] text-slate-400">admin.sabah@sabah.gov.my</p>
+                    <p className="text-xs font-bold text-amber-300 group-hover:text-amber-200">Log Masuk Sebagai Admin Biasa</p>
+                    <p className="text-[10px] text-slate-400">admin.sabah@sabah.gov.my (Microsoft AD)</p>
                   </div>
                 </div>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">ADMIN BIASA</span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">ADMIN</span>
+              </button>
+
+              {/* Option 3: User Biasa */}
+              <button 
+                onClick={() => handleSSOLogin('Google SSO', { name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER" })}
+                className="w-full bg-emerald-950/30 hover:bg-emerald-900/50 border border-emerald-500/40 p-3 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">🌐</div>
+                  <div>
+                    <p className="text-xs font-bold text-emerald-300 group-hover:text-emerald-200">Log Masuk Sebagai Pengguna Biasa</p>
+                    <p className="text-[10px] text-slate-400">siti@utm.my (Google SSO)</p>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono font-bold">USER</span>
               </button>
             </div>
           </div>
