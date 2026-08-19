@@ -6,9 +6,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'profile' | 'admin'
   
   // SSO & AUTH STATE
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // { name, email, role, avatarProvider }
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Default True untuk terus nampak butang menu
+  const [currentUser, setCurrentUser] = useState({
+    name: "Ahmad Zaki",
+    email: "zaki@plan.gov.my",
+    role: "SUPER_ADMIN",
+    provider: "MyGovUC SSO"
+  });
+  
   const [showSSOModal, setShowSSOModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false); // Toggle Menu Pop-up Bawah Kanan
+  const [showPasswordModal, setShowPasswordModal] = useState(false); // Modal Tukar Password
+
+  // Form State Tukar Password
+  const [passwordForm, setPasswordForm] = useState({ current: '', newPass: '', confirmPass: '' });
+  const [passwordStatus, setPasswordStatus] = useState('');
 
   // Map / Simulation State
   const [selectedRegionKey, setSelectedRegionKey] = useState('lahad_datu');
@@ -37,18 +49,15 @@ export default function App() {
 
   // SIMULASI SSO LOG IN
   const handleSSOLogin = (provider, mockUserData) => {
-    // Menyemak jika pengguna wujud dalam pangkalan data, jika tidak cipta akaun default 'USER'
     const existingUser = usersList.find(u => u.email === mockUserData.email);
     const roleAssigned = existingUser ? existingUser.role : mockUserData.defaultRole;
 
-    const loggedInUser = {
+    setCurrentUser({
       name: mockUserData.name,
       email: mockUserData.email,
       role: roleAssigned,
       provider: provider
-    };
-
-    setCurrentUser(loggedInUser);
+    });
     setIsAuthenticated(true);
     setShowSSOModal(false);
   };
@@ -56,7 +65,22 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setCurrentUser(null);
+    setShowUserMenu(false);
     setActiveTab('analytics');
+  };
+
+  const handleChangePassword = (e) => {
+    e.preventDefault();
+    if (passwordForm.newPass !== passwordForm.confirmPass) {
+      setPasswordStatus('Pengesahan kata laluan tidak sepadan!');
+      return;
+    }
+    setPasswordStatus('Kata laluan berjaya dikemaskini!');
+    setTimeout(() => {
+      setShowPasswordModal(false);
+      setPasswordStatus('');
+      setPasswordForm({ current: '', newPass: '', confirmPass: '' });
+    }, 1200);
   };
 
   const handleFileUpload = (e) => {
@@ -71,10 +95,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans relative">
       
       {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-10">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             UrbanWatch <span className="text-emerald-400">AI</span>
@@ -97,7 +121,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Navigation & Auth Button */}
+        {/* Top Right Header Actions */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
             <button 
@@ -106,15 +130,6 @@ export default function App() {
             >
               Peta
             </button>
-            
-            {isAuthenticated && (
-              <button 
-                onClick={() => setActiveTab('profile')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${activeTab === 'profile' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300'}`}
-              >
-                Profil
-              </button>
-            )}
 
             {isAuthenticated && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
               <button 
@@ -130,21 +145,7 @@ export default function App() {
             )}
           </div>
 
-          {/* SSO Auth Action */}
-          {isAuthenticated ? (
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-              <div className="text-right text-xs">
-                <p className="font-bold text-slate-200 leading-tight">{currentUser.name}</p>
-                <p className="text-[10px] text-slate-400">{currentUser.provider}</p>
-              </div>
-              <button 
-                onClick={handleLogout}
-                className="bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-300 border border-slate-700 text-xs px-2.5 py-1.5 rounded-lg transition"
-              >
-                Log Keluar
-              </button>
-            </div>
-          ) : (
+          {!isAuthenticated && (
             <button 
               onClick={() => setShowSSOModal(true)}
               className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-lg shadow-emerald-500/10 transition"
@@ -155,7 +156,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Analytics Map View */}
+      {/* Main Content Views */}
       {activeTab === 'analytics' && (
         <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="space-y-6 lg:col-span-1">
@@ -278,12 +279,145 @@ export default function App() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL SSO LOGIN (SIMULATION FOR MYGOVUC / GOOGLE / AZURE AD) */}
+      {/* FLOATING USER MENU BUTTON AT BOTTOM RIGHT (3 OPTIONS) */}
       {/* ========================================================================= */}
+      {isAuthenticated && (
+        <div className="fixed bottom-6 right-6 z-50">
+          
+          {/* Timbul Pop-up Menu (3 Pilihan) */}
+          {showUserMenu && (
+            <div className="mb-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 w-56 shadow-2xl space-y-1 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2">
+              <div className="px-3 py-2 border-b border-slate-800">
+                <p className="text-xs font-bold text-white truncate">{currentUser?.name}</p>
+                <p className="text-[10px] text-slate-400 truncate">{currentUser?.email}</p>
+              </div>
+
+              {/* Pilihan 1: User Profile */}
+              <button 
+                onClick={() => {
+                  setActiveTab('profile');
+                  setShowUserMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl flex items-center gap-2.5 transition"
+              >
+                <span>👤</span> Lihat Profil Saya
+              </button>
+
+              {/* Pilihan 2: Tukar Password */}
+              <button 
+                onClick={() => {
+                  setShowPasswordModal(true);
+                  setShowUserMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl flex items-center gap-2.5 transition"
+              >
+                <span>🔑</span> Tukar Kata Laluan
+              </button>
+
+              {/* Pilihan 3: Sign Out */}
+              <button 
+                onClick={handleLogout}
+                className="w-full text-left px-3 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl flex items-center gap-2.5 transition"
+              >
+                <span>🚪</span> Log Keluar (Sign Out)
+              </button>
+            </div>
+          )}
+
+          {/* Main Trigger Button */}
+          <button 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-full border border-slate-700 shadow-2xl flex items-center gap-3 pr-4 transition group active:scale-95"
+          >
+            <div className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center font-bold text-emerald-400 text-sm">
+              {currentUser?.name ? currentUser.name.charAt(0) : 'U'}
+            </div>
+            <div className="text-left hidden sm:block">
+              <p className="text-xs font-bold leading-tight group-hover:text-emerald-400 transition">{currentUser?.name}</p>
+              <p className="text-[10px] text-slate-400 leading-tight">Tetapan Akaun</p>
+            </div>
+            <span className="text-xs text-slate-400 group-hover:text-white transition">
+              {showUserMenu ? '✕' : '▲'}
+            </span>
+          </button>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL TUKAR KATA LALUAN (CHANGE PASSWORD MODAL) */}
+      {/* ========================================================================= */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                🔑 Tukar Kata Laluan
+              </h3>
+              <button onClick={() => setShowPasswordModal(false)} className="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Kata Laluan Sedia Ada</label>
+                <input 
+                  type="password" required
+                  value={passwordForm.current}
+                  onChange={(e) => setPasswordForm({...passwordForm, current: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white focus:outline-none focus:border-emerald-500" 
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Kata Laluan Baharu</label>
+                <input 
+                  type="password" required
+                  value={passwordForm.newPass}
+                  onChange={(e) => setPasswordForm({...passwordForm, newPass: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white focus:outline-none focus:border-emerald-500" 
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 block mb-1">Sahkan Kata Laluan Baharu</label>
+                <input 
+                  type="password" required
+                  value={passwordForm.confirmPass}
+                  onChange={(e) => setPasswordForm({...passwordForm, confirmPass: e.target.value})}
+                  className="w-full bg-slate-800 border border-slate-700 text-xs px-3 py-2 rounded-lg text-white focus:outline-none focus:border-emerald-500" 
+                />
+              </div>
+
+              {passwordStatus && (
+                <p className={`text-[11px] font-semibold ${passwordStatus.includes('berjaya') ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {passwordStatus}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowPasswordModal(false)}
+                  className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-1.5 rounded-lg transition"
+                >
+                  Simpan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SSO LOGIN */}
       {showSSOModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
-            
             <div className="flex justify-between items-center border-b border-slate-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-white">Log Masuk SSO UrbanWatch</h3>
@@ -292,13 +426,10 @@ export default function App() {
               <button onClick={() => setShowSSOModal(false)} className="text-slate-400 hover:text-white font-bold">✕</button>
             </div>
 
-            {/* SSO Providers Options */}
             <div className="space-y-3">
-              
-              {/* Option 1: Super Admin Demo */}
               <button 
                 onClick={() => handleSSOLogin('MyGovUC SSO', { name: "Ahmad Zaki", email: "zaki@plan.gov.my", defaultRole: "SUPER_ADMIN" })}
-                className="w-full bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 hover:border-purple-500 p-3 rounded-xl flex items-center justify-between text-left transition group"
+                className="w-full bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 p-3 rounded-xl flex items-center justify-between text-left transition"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">🏛️</div>
@@ -310,10 +441,9 @@ export default function App() {
                 <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded font-mono font-bold">SUPER ADMIN</span>
               </button>
 
-              {/* Option 2: Admin Biasa Demo */}
               <button 
                 onClick={() => handleSSOLogin('Microsoft Entra ID', { name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", defaultRole: "ADMIN" })}
-                className="w-full bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 hover:border-amber-500 p-3 rounded-xl flex items-center justify-between text-left transition group"
+                className="w-full bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 p-3 rounded-xl flex items-center justify-between text-left transition"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">🏢</div>
@@ -324,28 +454,7 @@ export default function App() {
                 </div>
                 <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">ADMIN BIASA</span>
               </button>
-
-              {/* Option 3: Standard User Demo */}
-              <button 
-                onClick={() => handleSSOLogin('Google Workspace', { name: "Dr. Siti Aminah", email: "siti@utm.my", defaultRole: "USER" })}
-                className="w-full bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-emerald-500/50 p-3 rounded-xl flex items-center justify-between text-left transition group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">🎓</div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-200">Log Masuk Google Workspace</p>
-                    <p className="text-[10px] text-slate-400">siti@utm.my</p>
-                  </div>
-                </div>
-                <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono font-bold">USER BIASA</span>
-              </button>
-
             </div>
-
-            <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-              Sistem menyemak kelayakan cap jari OAuth 2.0 & SAML secara automatik untuk kebenaran peranan pengguna.
-            </p>
-
           </div>
         </div>
       )}
