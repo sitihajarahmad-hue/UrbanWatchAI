@@ -4,21 +4,25 @@ import 'leaflet/dist/leaflet.css';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('analytics'); // 'analytics' | 'profile' | 'admin'
-  const [userRole, setUserRole] = useState('SUPER_ADMIN'); // 'USER' | 'ADMIN' | 'SUPER_ADMIN'
-  const [selectedRegionKey, setSelectedRegionKey] = useState('lahad_datu');
   
-  // Interactive Simulation State
+  // SSO & AUTH STATE
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // { name, email, role, avatarProvider }
+  const [showSSOModal, setShowSSOModal] = useState(false);
+
+  // Map / Simulation State
+  const [selectedRegionKey, setSelectedRegionKey] = useState('lahad_datu');
   const [urbanExpansionRate, setUrbanExpansionRate] = useState(0); 
 
-  // ADMIN STATE
+  // Admin State
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
-  const [riskThreshold, setRiskThreshold] = useState(80);
 
-  // USER MANAGEMENT STATE (HANYA SUPER ADMIN)
+  // Mock User List for Super Admin Management
   const [usersList, setUsersList] = useState([
-    { id: 1, name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "ADMIN", status: "Active" },
-    { id: 2, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", status: "Pending" }
+    { id: 1, name: "Ahmad Zaki", email: "zaki@plan.gov.my", role: "SUPER_ADMIN", status: "Active", provider: "MyGovUC SSO" },
+    { id: 2, name: "Dr. Siti Aminah", email: "siti@utm.my", role: "USER", status: "Active", provider: "Google SSO" },
+    { id: 3, name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", role: "ADMIN", status: "Active", provider: "Microsoft SSO" }
   ]);
 
   // Database mock
@@ -31,13 +35,37 @@ export default function App() {
   const current = database[selectedRegionKey];
   const calculatedRiskScore = Math.min(100, Math.round(current.baseRisk + (urbanExpansionRate * 1.2)));
 
+  // SIMULASI SSO LOG IN
+  const handleSSOLogin = (provider, mockUserData) => {
+    // Menyemak jika pengguna wujud dalam pangkalan data, jika tidak cipta akaun default 'USER'
+    const existingUser = usersList.find(u => u.email === mockUserData.email);
+    const roleAssigned = existingUser ? existingUser.role : mockUserData.defaultRole;
+
+    const loggedInUser = {
+      name: mockUserData.name,
+      email: mockUserData.email,
+      role: roleAssigned,
+      provider: provider
+    };
+
+    setCurrentUser(loggedInUser);
+    setIsAuthenticated(true);
+    setShowSSOModal(false);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setActiveTab('analytics');
+  };
+
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setUploadedFile(file);
       setUploadStatus('Memproses dan mengesahkan struktur data spatial...');
       setTimeout(() => {
-        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport ke dalam pangkalan data.`);
+        setUploadStatus(`Berjaya! Data spatial '${file.name}' telah diimport.`);
       }, 1500);
     }
   };
@@ -51,33 +79,26 @@ export default function App() {
           <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             UrbanWatch <span className="text-emerald-400">AI</span>
           </h1>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold border ${
-            userRole === 'SUPER_ADMIN' 
-              ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
-              : userRole === 'ADMIN' 
-              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
-              : 'bg-slate-800 text-slate-300 border-slate-700'
-          }`}>
-            {userRole === 'SUPER_ADMIN' ? '👑 SUPER ADMIN' : userRole === 'ADMIN' ? '⚡ ADMIN BIASA' : '👤 USER BIASA'}
-          </span>
+
+          {isAuthenticated ? (
+            <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold border ${
+              currentUser?.role === 'SUPER_ADMIN' 
+                ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' 
+                : currentUser?.role === 'ADMIN' 
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' 
+                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            }`}>
+              {currentUser?.role === 'SUPER_ADMIN' ? '👑 SUPER ADMIN' : currentUser?.role === 'ADMIN' ? '⚡ ADMIN' : '👤 USER'}
+            </span>
+          ) : (
+            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">
+              MOD TETAMU (GUEST)
+            </span>
+          )}
         </div>
 
-        {/* Role Switcher Demo */}
+        {/* Navigation & Auth Button */}
         <div className="flex items-center gap-3">
-          <select 
-            value={userRole} 
-            onChange={(e) => {
-              const role = e.target.value;
-              setUserRole(role);
-              if (role === 'USER' && activeTab === 'admin') setActiveTab('analytics');
-            }}
-            className="bg-slate-800 text-xs font-bold text-amber-400 px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none"
-          >
-            <option value="SUPER_ADMIN">Peranan: Super Admin</option>
-            <option value="ADMIN">Peranan: Admin Biasa</option>
-            <option value="USER">Peranan: Pengguna Biasa</option>
-          </select>
-
           <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
             <button 
               onClick={() => setActiveTab('analytics')}
@@ -85,18 +106,22 @@ export default function App() {
             >
               Peta
             </button>
-            <button 
-              onClick={() => setActiveTab('profile')}
-              className={`px-3 py-1 text-xs font-semibold rounded-md transition ${activeTab === 'profile' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300'}`}
-            >
-              Profil
-            </button>
-            {(userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
+            
+            {isAuthenticated && (
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition ${activeTab === 'profile' ? 'bg-emerald-500 text-slate-950 font-bold' : 'text-slate-300'}`}
+              >
+                Profil
+              </button>
+            )}
+
+            {isAuthenticated && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
               <button 
                 onClick={() => setActiveTab('admin')}
                 className={`px-3 py-1 text-xs font-semibold rounded-md transition ${
                   activeTab === 'admin' 
-                    ? userRole === 'SUPER_ADMIN' ? 'bg-purple-500 text-slate-950 font-bold' : 'bg-amber-500 text-slate-950 font-bold' 
+                    ? currentUser?.role === 'SUPER_ADMIN' ? 'bg-purple-500 text-slate-950 font-bold' : 'bg-amber-500 text-slate-950 font-bold' 
                     : 'text-amber-400'
                 }`}
               >
@@ -104,6 +129,29 @@ export default function App() {
               </button>
             )}
           </div>
+
+          {/* SSO Auth Action */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <div className="text-right text-xs">
+                <p className="font-bold text-slate-200 leading-tight">{currentUser.name}</p>
+                <p className="text-[10px] text-slate-400">{currentUser.provider}</p>
+              </div>
+              <button 
+                onClick={handleLogout}
+                className="bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-300 border border-slate-700 text-xs px-2.5 py-1.5 rounded-lg transition"
+              >
+                Log Keluar
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowSSOModal(true)}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-lg shadow-emerald-500/10 transition"
+            >
+              Log Masuk SSO
+            </button>
+          )}
         </div>
       </header>
 
@@ -153,128 +201,153 @@ export default function App() {
       )}
 
       {/* User Profile View */}
-      {activeTab === 'profile' && (
-        <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400 font-bold">
-              AZ
+      {activeTab === 'profile' && isAuthenticated && (
+        <main className="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center text-emerald-400 font-bold text-xl">
+                {currentUser.name.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">{currentUser.name}</h2>
+                <p className="text-xs text-slate-400">{currentUser.email}</p>
+                <p className="text-[10px] text-emerald-400 mt-1 font-mono">Didaftarkan Melalui: {currentUser.provider}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Ahmad Zaki</h2>
-              <p className="text-xs text-slate-400">Pegawai Perancang Bandar • PLANMalaysia</p>
+            <span className="bg-slate-800 border border-slate-700 text-xs px-3 py-1 rounded-lg text-amber-400 font-bold">
+              Role: {currentUser.role}
+            </span>
+          </div>
+        </main>
+      )}
+
+      {/* Admin View */}
+      {activeTab === 'admin' && isAuthenticated && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+        <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
+          <div className="border-b border-slate-800 pb-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              ⚙️ Dashboard Pentadbiran ({currentUser.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin biasa'})
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4">
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">1. Import Fail Spatial (.JSON / .SHP)</h3>
+              <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center bg-slate-950/40">
+                <input type="file" accept=".json,.geojson,.zip" onChange={handleFileUpload} className="hidden" id="admin-file-input" />
+                <label htmlFor="admin-file-input" className="cursor-pointer block space-y-2">
+                  <div className="text-2xl">📁</div>
+                  <p className="text-xs text-slate-300">Muat Naik Data Terkini Daerah</p>
+                </label>
+              </div>
+              {uploadedFile && <p className="text-xs text-emerald-400 font-semibold">{uploadStatus}</p>}
+            </div>
+
+            {/* Super Admin Control */}
+            <div className={`p-6 rounded-xl space-y-4 border ${currentUser?.role === 'SUPER_ADMIN' ? 'bg-slate-900 border-purple-500/40' : 'bg-slate-900/40 border-slate-800 opacity-50'}`}>
+              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">2. Pengurusan Kebenaran Pengguna (SSO)</h3>
+              {currentUser?.role === 'SUPER_ADMIN' ? (
+                <div className="space-y-2 text-xs">
+                  {usersList.map(u => (
+                    <div key={u.id} className="bg-slate-800 p-2.5 rounded-lg flex justify-between items-center">
+                      <div>
+                        <p className="font-bold text-slate-200">{u.name}</p>
+                        <p className="text-[10px] text-slate-400">{u.email} • <span className="text-emerald-400">{u.provider}</span></p>
+                      </div>
+                      <select 
+                        value={u.role}
+                        onChange={(e) => {
+                          const updated = usersList.map(x => x.id === u.id ? {...x, role: e.target.value} : x);
+                          setUsersList(updated);
+                        }}
+                        className="bg-slate-900 text-emerald-400 font-bold px-2 py-1 rounded border border-slate-700"
+                      >
+                        <option value="USER">USER</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500 italic py-6 text-center">Akses Kawalan Pengguna Terhad kepada Super Admin sahaja.</p>
+              )}
             </div>
           </div>
         </main>
       )}
 
-      {/* ADMIN PANEL VIEW (DIAGNOSED FOR ADMIN & SUPER ADMIN) */}
-      {activeTab === 'admin' && (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') && (
-        <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
-          
-          <div className="border-b border-slate-800 pb-4 flex justify-between items-center">
-            <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                ⚙️ Dashboard Pengurusan {userRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
-              </h2>
-              <p className="text-xs text-slate-400">Kawalan pentadbiran pangkalan data GIS dan kebenaran sistem.</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* ========================================================================= */}
+      {/* MODAL SSO LOGIN (SIMULATION FOR MYGOVUC / GOOGLE / AZURE AD) */}
+      {/* ========================================================================= */}
+      {showSSOModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
             
-            {/* 1. Spatial File Upload Panel (ADMIN & SUPER ADMIN) */}
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4">
-              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
-                1. Muat Naik Data Spatial Baharu
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Format disokong: <code className="text-emerald-400">.json</code>, <code className="text-emerald-400">.geojson</code>, atau <code className="text-emerald-400">.zip</code> (Shapefile SHP).
-              </p>
-
-              <div className="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center space-y-3 bg-slate-950/40 cursor-pointer">
-                <input type="file" accept=".json,.geojson,.zip,.shp" onChange={handleFileUpload} className="hidden" id="admin-file-input" />
-                <label htmlFor="admin-file-input" className="cursor-pointer space-y-2 block">
-                  <div className="text-2xl">📁</div>
-                  <p className="text-xs text-slate-300 font-semibold">Klik untuk memilih fail data spatial</p>
-                </label>
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-bold text-white">Log Masuk SSO UrbanWatch</h3>
+                <p className="text-xs text-slate-400">Pilih Akaun Organisasi / Kerajaan Anda</p>
               </div>
-
-              {uploadedFile && (
-                <div className="text-xs bg-slate-800 p-3 rounded-lg border border-slate-700 space-y-1">
-                  <p className="font-bold text-slate-200">Fail: {uploadedFile.name}</p>
-                  {uploadStatus && <p className="text-emerald-400 pt-1 font-semibold">{uploadStatus}</p>}
-                </div>
-              )}
+              <button onClick={() => setShowSSOModal(false)} className="text-slate-400 hover:text-white font-bold">✕</button>
             </div>
 
-            {/* 2. SUPER ADMIN ONLY: User Management & System Config */}
-            <div className={`p-6 rounded-xl space-y-4 border ${
-              userRole === 'SUPER_ADMIN' ? 'bg-slate-900 border-purple-500/40' : 'bg-slate-900/40 border-slate-800 opacity-60'
-            }`}>
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">
-                  2. Pengurusan Pengguna & Peranan
-                </h3>
-                {userRole !== 'SUPER_ADMIN' && (
-                  <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded border border-red-500/30">Hanya Super Admin</span>
-                )}
-              </div>
-
-              {userRole === 'SUPER_ADMIN' ? (
-                <div className="space-y-3 text-xs">
-                  <p className="text-slate-400">Senarai Pengguna & Kebenaran Role:</p>
-                  <div className="space-y-2">
-                    {usersList.map(u => (
-                      <div key={u.id} className="bg-slate-800 p-2.5 rounded-lg flex justify-between items-center">
-                        <div>
-                          <p className="font-bold text-slate-200">{u.name}</p>
-                          <p className="text-[10px] text-slate-400">{u.email}</p>
-                        </div>
-                        <select 
-                          value={u.role}
-                          onChange={(e) => {
-                            const updated = usersList.map(x => x.id === u.id ? {...x, role: e.target.value} : x);
-                            setUsersList(updated);
-                          }}
-                          className="bg-slate-900 text-emerald-400 font-bold px-2 py-1 rounded border border-slate-700"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="ADMIN">ADMIN</option>
-                          <option value="SUPER_ADMIN">SUPER ADMIN</option>
-                        </select>
-                      </div>
-                    ))}
+            {/* SSO Providers Options */}
+            <div className="space-y-3">
+              
+              {/* Option 1: Super Admin Demo */}
+              <button 
+                onClick={() => handleSSOLogin('MyGovUC SSO', { name: "Ahmad Zaki", email: "zaki@plan.gov.my", defaultRole: "SUPER_ADMIN" })}
+                className="w-full bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 hover:border-purple-500 p-3 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">🏛️</div>
+                  <div>
+                    <p className="text-xs font-bold text-purple-300">Log Masuk MyGovUC SSO</p>
+                    <p className="text-[10px] text-slate-400">zaki@plan.gov.my</p>
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500 italic py-6 text-center">
-                  Akses ditutup. Anda memerlukan kebenaran Super Admin untuk mengurus peranan pengguna lain.
-                </p>
-              )}
+                <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded font-mono font-bold">SUPER ADMIN</span>
+              </button>
+
+              {/* Option 2: Admin Biasa Demo */}
+              <button 
+                onClick={() => handleSSOLogin('Microsoft Entra ID', { name: "Perancang Sabah", email: "admin.sabah@sabah.gov.my", defaultRole: "ADMIN" })}
+                className="w-full bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 hover:border-amber-500 p-3 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">🏢</div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-300">Log Masuk Microsoft Azure AD</p>
+                    <p className="text-[10px] text-slate-400">admin.sabah@sabah.gov.my</p>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-mono font-bold">ADMIN BIASA</span>
+              </button>
+
+              {/* Option 3: Standard User Demo */}
+              <button 
+                onClick={() => handleSSOLogin('Google Workspace', { name: "Dr. Siti Aminah", email: "siti@utm.my", defaultRole: "USER" })}
+                className="w-full bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-emerald-500/50 p-3 rounded-xl flex items-center justify-between text-left transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">🎓</div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-200">Log Masuk Google Workspace</p>
+                    <p className="text-[10px] text-slate-400">siti@utm.my</p>
+                  </div>
+                </div>
+                <span className="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono font-bold">USER BIASA</span>
+              </button>
+
             </div>
+
+            <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+              Sistem menyemak kelayakan cap jari OAuth 2.0 & SAML secara automatik untuk kebenaran peranan pengguna.
+            </p>
 
           </div>
-
-          {/* 3. SUPER ADMIN ONLY: Database Connection & System Audit */}
-          {userRole === 'SUPER_ADMIN' && (
-            <div className="bg-slate-900 border border-purple-500/30 p-6 rounded-xl space-y-3">
-              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">
-                3. Tetapan Pangkalan Data Supabase & Log Audit
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="bg-slate-800/60 p-3 rounded-lg border border-slate-700 space-y-1">
-                  <p className="text-slate-400">URL Supabase Host:</p>
-                  <code className="text-emerald-400 font-mono">https://xyzcompany.supabase.co</code>
-                </div>
-                <div className="bg-slate-800/60 p-3 rounded-lg border border-slate-700 space-y-1">
-                  <p className="text-slate-400">Status Database PostgreSQL:</p>
-                  <span className="text-emerald-400 font-mono font-bold">STABLE / CONNECTED</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </main>
+        </div>
       )}
 
     </div>
