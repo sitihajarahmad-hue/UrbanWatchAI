@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, LayersControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // DICTIONARY DWI-BAHASA (BM / EN) - JPBW SABAH E-ZONING
@@ -92,6 +92,37 @@ const translations = {
   }
 };
 
+// SAMPLE GEOJSON DATA (POLIGON LOT KADASTER & ZONING SABAH)
+const sampleCadastralPolygons = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "upi": "1201020001001", "no_lot": "Lot 101", "guna_tanah": "Zoning Komersial (ZONINGPD)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.0715, 5.9815], [116.0745, 5.9815], [116.0745, 5.9790], [116.0715, 5.9790], [116.0715, 5.9815]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "upi": "1201020001002", "no_lot": "Lot 102", "guna_tanah": "Zoning Kediaman (ZONINGPD)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.0748, 5.9815], [116.0775, 5.9815], [116.0775, 5.9790], [116.0748, 5.9790], [116.0748, 5.9815]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "upi": "1201020001003", "no_lot": "Lot 103", "guna_tanah": "Rizab Perparitan (PARIT1)" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[116.0715, 5.9788], [116.0775, 5.9788], [116.0775, 5.9770], [116.0715, 5.9770], [116.0715, 5.9788]]]
+      }
+    }
+  ]
+};
+
 export default function App() {
   const [lang, setLang] = useState('BM');
   const t = translations[lang];
@@ -122,16 +153,16 @@ export default function App() {
     { id: 'LYR-ELEKTRIK1', region: 'Kota Kinabalu', filename: 'ELEKTRIK1.shp (High Voltage Grid)', uploadedBy: 'sesb.admin@sabah.gov.my', status: 'Approved' }
   ]);
 
-  // USERS LIST ACCORDING TO URS SPECIFICATION (SUPER ADMIN, SYSTEM ADMIN, PUBLIC USER)
+  // USERS LIST ACCORDING TO URS SPECIFICATION
   const [usersList] = useState([
     { id: 1, name: "Pegawai JPBW Sabah", email: "superadmin.jpbw@sabah.gov.my", role: "SUPER_ADMIN", provider: "Sabah Pay / Govt SSO" },
     { id: 2, name: "Perancang Bandar", email: "sysadmin.planner@sabah.gov.my", role: "SYSTEM_ADMIN", provider: "Microsoft Azure AD" },
     { id: 3, name: "Pengguna Awam / Pemaju", email: "public.user@gmail.com", role: "PUBLIC_USER", provider: "MyGovUC SSO" }
   ]);
 
-  // SABAH TARGET DISTRICTS (FROM URS REPORT)
+  // SABAH TARGET DISTRICTS
   const database = {
-    kota_kinabalu: { name: "Kota Kinabalu", coords: [5.9804, 116.0735], zoom: 12, baseRisk: 70 },
+    kota_kinabalu: { name: "Kota Kinabalu", coords: [5.9804, 116.0735], zoom: 14, baseRisk: 70 },
     penampang: { name: "Penampang", coords: [5.9122, 116.1030], zoom: 13, baseRisk: 65 },
     putatan: { name: "Putatan", coords: [5.8920, 116.0500], zoom: 13, baseRisk: 60 },
     tuaran: { name: "Tuaran", coords: [6.1778, 116.2308], zoom: 12, baseRisk: 55 }
@@ -174,11 +205,32 @@ export default function App() {
     }, 1000);
   };
 
-  // 1. LANDING PAGE SSO LOG IN (CLEAN WHITE THEME WITH EMERALD/BLUE BORDERS)
+  // STYLE STYLING POLIGON LOT KADASTER
+  const cadasterStyle = {
+    color: '#0284c7', // Garisan biru tebal
+    weight: 2,
+    opacity: 0.9,
+    fillColor: '#38bdf8',
+    fillOpacity: 0.25
+  };
+
+  const onEachParcel = (feature, layer) => {
+    if (feature.properties) {
+      layer.bindPopup(`
+        <div style="font-size:12px; font-family:sans-serif;">
+          <b style="color:#0284c7;">${feature.properties.no_lot}</b><br/>
+          <b>UPI:</b> ${feature.properties.upi}<br/>
+          <b>Kategori:</b> ${feature.properties.guna_tanah}
+        </div>
+      `);
+    }
+  };
+
+  // 1. LANDING PAGE SSO LOG IN
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+      <div className="w-full h-screen overflow-y-auto bg-slate-50 text-slate-800 flex flex-col font-sans">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm flex-shrink-0">
           <div className="flex items-center gap-4">
             <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex items-center">
               <button onClick={() => setLang('BM')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'BM' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>BM</button>
@@ -188,7 +240,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 flex items-center justify-center p-6">
+        <main className="flex-1 flex items-center justify-center p-6 my-auto">
           <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-8 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-emerald-500"></div>
             <div className="text-center space-y-2">
@@ -233,10 +285,10 @@ export default function App() {
     );
   }
 
-  // 2. DASHBOARD UTAMA (CLEAN WHITE THEME + ACCENT BORDERS)
+  // 2. DASHBOARD UTAMA (BOLEH SCROLL DENGAN BEBAS & BEKERJA DENGAN BAIK)
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans relative">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-20 shadow-sm">
+    <div className="w-full h-screen overflow-y-auto bg-slate-50 text-slate-800 flex flex-col font-sans relative">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-20 shadow-sm flex-shrink-0 sticky top-0">
         <div className="flex items-center gap-4">
           <div className="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex items-center">
             <button onClick={() => setLang('BM')} className={`px-3 py-1 text-[11px] font-bold rounded-md transition ${lang === 'BM' ? 'bg-emerald-600 text-white shadow' : 'text-slate-500'}`}>BM</button>
@@ -266,9 +318,9 @@ export default function App() {
         </div>
       </header>
 
-      {/* VIEW 1: MAP + PANEL ANALISIS (ORIGINAL SABAH DATA) */}
+      {/* VIEW 1: MAP + PANEL ANALISIS */}
       {currentPage === 'map' && (
-        <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <main className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 pb-24">
           <div className="space-y-6 lg:col-span-1">
             <div className="bg-white border-t-4 border-t-emerald-500 border-x border-b border-slate-200 p-5 rounded-xl space-y-4 shadow-sm">
               <label className="text-xs text-slate-500 block font-bold uppercase tracking-wide">{t.selectRegion}</label>
@@ -300,17 +352,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* INFORMASI TIER LAYER ACCORDING TO URS */}
             <div className="bg-white border-l-4 border-l-blue-500 border-y border-r border-slate-200 p-4 rounded-xl shadow-sm text-xs space-y-2">
               <h3 className="font-bold text-slate-800 uppercase tracking-wide">Peringkat Akses Layer (Sabah E-Zoning)</h3>
-              <p className="text-slate-600">● <strong>1st Level (FOC):</strong> Akses asas 9 atribut (Daerah, Kod Geran)[span_20](start_span)[span_20](end_span).</p>
-              <p className="text-slate-600">● <strong>2nd Level (Subscription):</strong> Akses 8 atribut tambahan pelan daerah[span_21](start_span)[span_21](end_span).</p>
-              <p className="text-slate-600">● <strong>3rd Level (Token Access):</strong> Carian Lot Kadaster (10 Token / Parcel)[span_22](start_span)[span_22](end_span).</p>
+              <p className="text-slate-600">● <strong>1st Level (FOC):</strong> Akses asas 9 atribut (Daerah, Kod Geran).</p>
+              <p className="text-slate-600">● <strong>2nd Level (Subscription):</strong> Akses 8 atribut tambahan pelan daerah.</p>
+              <p className="text-slate-600">● <strong>3rd Level (Token Access):</strong> Carian Lot Kadaster (10 Token / Parcel).</p>
             </div>
           </div>
 
-          <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[500px] z-0">
-            <MapContainer key={selectedRegionKey} center={current.coords} zoom={current.zoom} className="w-full h-full min-h-[500px]">
+          <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[550px] z-0">
+            <MapContainer key={selectedRegionKey} center={current.coords} zoom={current.zoom} className="w-full h-full min-h-[550px]">
               <LayersControl position="topright">
                 <LayersControl.BaseLayer checked name={t.satEsri}>
                   <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
@@ -321,23 +372,27 @@ export default function App() {
                 <LayersControl.BaseLayer name={t.satOsm}>
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 </LayersControl.BaseLayer>
+
+                {/* OVERLAY POLIGON LOT KADASTER & ZONING */}
+                <LayersControl.Overlay checked name="Poligon Lot Kadaster (KADASTER)">
+                  <GeoJSON data={sampleCadastralPolygons} style={cadasterStyle} onEachFeature={onEachParcel} />
+                </LayersControl.Overlay>
               </LayersControl>
+
               <TileLayer url="https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}" />
-              <Circle center={current.coords} radius={1000 + (urbanExpansionRate * 80)} pathOptions={{ color: '#059669', fillColor: '#10b981', fillOpacity: 0.3 }} />
+              <Circle center={current.coords} radius={1000 + (urbanExpansionRate * 80)} pathOptions={{ color: '#059669', fillColor: '#10b981', fillOpacity: 0.2 }} />
               <Marker position={current.coords}><Popup>{current.name} - GIS Spatial Layer Active</Popup></Marker>
             </MapContainer>
           </div>
         </main>
       )}
 
-      {/* VIEW 2: HALAMAN PROFIL PENGGUNA (DESIGN BERSIH, PUTIH, BORDER HIJAU & BIRU) */}
+      {/* VIEW 2: HALAMAN PROFIL PENGGUNA */}
       {currentPage === 'profile' && (
-        <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6">
+        <main className="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6 pb-24">
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">👤 {t.profileTitle}</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* KAD PROFIL KIRI */}
             <div className="md:col-span-1 bg-white border-t-4 border-t-blue-500 border-x border-b border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col items-center text-center space-y-4">
               <div className="w-24 h-24 rounded-full bg-blue-50 border-2 border-blue-400 shadow-md flex items-center justify-center text-blue-600 font-black text-4xl">
                 {currentUser?.name.charAt(0)}
@@ -356,10 +411,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* KAD MAKLUMAT KANAN */}
             <div className="md:col-span-2 space-y-6">
-              
-              {/* MAKLUMAT PERIBADI */}
               <div className="bg-white border-l-4 border-l-emerald-500 border-y border-r border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.personalInfo}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -382,7 +434,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* KEBENARAN SISTEM E-ZONING */}
               <div className="bg-white border-l-4 border-l-blue-500 border-y border-r border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.sysPermissions}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -390,7 +441,7 @@ export default function App() {
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">✅</div>
                     <div>
                       <p className="font-bold text-slate-800">Akses Peta Interactive IOC</p>
-                      <p className="text-[11px] text-slate-500">Melihat layer ZONINGPD, ZONINGPT & KADASTER[span_23](start_span)[span_23](end_span).</p>
+                      <p className="text-[11px] text-slate-500">Melihat layer ZONINGPD, ZONINGPT & KADASTER.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -399,7 +450,7 @@ export default function App() {
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">Muat Naik Layer Spatial JPBW</p>
-                      <p className="text-[11px] text-slate-500">Menambah data Shapefile (.shp) & GeoJSON[span_24](start_span)[span_24](end_span).</p>
+                      <p className="text-[11px] text-slate-500">Menambah data Shapefile (.shp) & GeoJSON.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -408,41 +459,19 @@ export default function App() {
                     </div>
                     <div>
                       <p className="font-bold text-slate-800">Kelulusan Data & Pengurusan Pengguna</p>
-                      <p className="text-[11px] text-slate-500">Kelulusan akhir layer spatial sebelum diterbitkan[span_25](start_span)[span_25](end_span).</p>
+                      <p className="text-[11px] text-slate-500">Kelulusan akhir layer spatial sebelum diterbitkan.</p>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* AKTIVITI TERKINI */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wide">{t.recentActivity}</h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center justify-between border-b border-slate-50 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">🗺️</span>
-                      <span className="text-slate-700 font-medium">Log masuk SSO E-Zoning Sabah</span>
-                    </div>
-                    <span className="text-xs text-slate-400">Hari ini, 08:30 AM</span>
-                  </li>
-                  <li className="flex items-center justify-between border-b border-slate-50 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">📍</span>
-                      <span className="text-slate-700 font-medium">Carian Lot Kadaster di Kota Kinabalu</span>
-                    </div>
-                    <span className="text-xs text-slate-400">Semalam, 14:15 PM</span>
-                  </li>
-                </ul>
-              </div>
-
             </div>
           </div>
         </main>
       )}
 
-      {/* VIEW 3: HALAMAN ADMIN (CLEAN WHITE THEME) */}
+      {/* VIEW 3: HALAMAN ADMIN */}
       {currentPage === 'admin' && (currentUser?.role === 'SYSTEM_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
-        <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
+        <main className="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6 pb-24">
           <div className="border-b border-slate-200 pb-4">
             <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
               ⚙️ {t.adminTitle}
